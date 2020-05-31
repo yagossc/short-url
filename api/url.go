@@ -43,17 +43,16 @@ func (s *Server) shortener(c echo.Context) error {
 	short := shortener.GetShortURL(time.Now().UnixNano())
 
 	var mappedURL app.MapURL
-	mappedURL.URLID = 0
 	mappedURL.Short = short
 	mappedURL.Long = long.URL
 
 	shortened, err := store.InsertURL(s.db, &mappedURL)
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		// fmt.Printf("%v\n", err)
 		return err
 	}
 
-	s.addRoute(shortened)
+	s.AddRoute(shortened)
 
 	return c.JSON(http.StatusCreated, shortened)
 }

@@ -12,7 +12,7 @@ func FindURLByShort(db *query.Executor, short string) (*app.MapURL, error) {
 	sql.Add("SELECT  url_id,")
 	sql.Add("        url_short,")
 	sql.Add("        url_long")
-	sql.Add("   FROM url_map")
+	sql.From("   FROM url_map")
 	sql.Where("WHERE url_short = ?", short)
 
 	var url app.MapURL
@@ -23,6 +23,17 @@ func FindURLByShort(db *query.Executor, short string) (*app.MapURL, error) {
 	}
 
 	return &url, nil
+}
+
+// FindAllURL retrieves all available url mappings
+func FindAllURL(db *query.Executor) ([]app.MapURL, error) {
+	sql := db.NewBuilder()
+	sql.Add("SELECT *")
+	sql.From("FROM url_map")
+
+	var result []app.MapURL
+	err := sql.Select(&result)
+	return result, err
 }
 
 // InsertURL saves a new MapURL i the database.

@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // ErrTooManyRows is a signal error indicating that a resultset
@@ -105,19 +107,17 @@ func (b *Builder) One(value interface{}) error {
 	return nil
 }
 
+// Select executes the query and loads the data unto the slice
+func (b *Builder) Select(resultSlice interface{}) error {
+	return sqlx.Select(b.executor, resultSlice, b.buildSQL(), b.params...)
+}
+
 // Exec executes the non-select statement
 func (b *Builder) Exec() (sql.Result, error) {
 	s := b.buildSQL()
 
 	return b.executor.Exec(s, b.params...)
 }
-
-// // Exec executes the non-select statement
-// func (b *Builder) Query() (*sql.Row, error) {
-//	s := b.buildSQL()
-
-//	return b.executor.QueryRow(s, b.params...)
-// }
 
 func (b *Builder) appendSQL(sb *strings.Builder, s string) {
 	if s == "" {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +12,10 @@ import (
 	"github.com/yagossc/short-url/shortener"
 	"github.com/yagossc/short-url/store"
 )
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 func (s *Server) redirect(c echo.Context) error {
 	currentPath := strings.TrimPrefix(c.Path(), "/")
@@ -40,7 +45,21 @@ func (s *Server) shortener(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Bad Request")
 	}
 
-	short := shortener.GetShortURL(time.Now().UnixNano())
+	short := shortener.GetShortURL(rand.Int63())
+	existent, err := store.FindURLByShort(s.db, short)
+	if err != nil {
+		return err
+	}
+
+	// Check for a collision and try again if needed
+	for existent != nil || short == "" {
+		var err error
+		short = shortener.GetShortURL(rand.Int63())
+		existent, err = store.FindURLByShort(s.db, short)
+		if err != nil {
+			return err
+		}
+	}
 
 	var mappedURL app.MapURL
 	mappedURL.Short = short

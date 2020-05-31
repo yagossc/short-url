@@ -43,7 +43,7 @@ func main() {
 	s.Routes()
 
 	results, err := store.FindAllURL(executor)
-	if err != nil {
+	if err != nil { // FIXME: properly handle this error
 		fmt.Printf("error: %v\n", err)
 	}
 	for _, val := range results {

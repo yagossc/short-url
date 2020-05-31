@@ -12,7 +12,7 @@ import (
 	"github.com/yagossc/short-url/store"
 )
 
-func (s *Server) base(c echo.Context) error {
+func (s *Server) redirect(c echo.Context) error {
 	currentPath := strings.TrimPrefix(c.Path(), "/")
 	// fmt.Printf("Path:%s\n", currentPath)
 
@@ -26,7 +26,7 @@ func (s *Server) base(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, "Not Found")
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return c.Redirect(http.StatusMovedPermanently, response.Long)
 }
 
 func (s *Server) shortener(c echo.Context) error {
@@ -54,5 +54,5 @@ func (s *Server) shortener(c echo.Context) error {
 
 	s.AddRoute(shortened)
 
-	return c.JSON(http.StatusCreated, shortened)
+	return c.JSON(http.StatusCreated, s.url+"/"+shortened)
 }

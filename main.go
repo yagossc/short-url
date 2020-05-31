@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -36,7 +37,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Create server
-	s := api.NewServer(executor, e)
+	s := api.NewServer(executor, e, cfg.BaseURL)
 
 	// API routes
 	s.Routes()
@@ -49,7 +50,7 @@ func main() {
 		s.AddRoute(val.Short)
 	}
 
-	log.Fatal(s.Start(":8080"))
+	log.Fatal(s.Start(":" + strconv.FormatUint(cfg.Port, 10)))
 }
 
 func openDBConnection(cfg config) (*sqlx.DB, error) {

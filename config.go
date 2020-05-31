@@ -9,6 +9,7 @@ import (
 )
 
 type config struct {
+	BaseURL  string
 	Port     uint64
 	DBDriver string
 	DBURL    string
@@ -30,6 +31,10 @@ func loadConfig() config {
 		}
 
 		cfg.Port = v
+	}
+
+	if s, ok := os.LookupEnv("TAPI_URL"); ok {
+		cfg.BaseURL = s
 	}
 
 	if s, ok := os.LookupEnv("TAPI_DB_DRIVER"); ok {

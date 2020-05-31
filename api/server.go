@@ -7,13 +7,14 @@ import (
 
 // Server is a wrapper around echo.Echo and the database connection
 type Server struct {
-	db *query.Executor
-	e  *echo.Echo
+	db  *query.Executor
+	e   *echo.Echo
+	url string
 }
 
 // NewServer returns a new server instance
-func NewServer(db *query.Executor, e *echo.Echo) *Server {
-	s := &Server{db: db, e: e}
+func NewServer(db *query.Executor, e *echo.Echo, url string) *Server {
+	s := &Server{db: db, e: e, url: url}
 	return s
 }
 
@@ -26,5 +27,5 @@ func (s *Server) Start(address string) error {
 // gives the API the expected url shortener behavior.
 func (s *Server) AddRoute(id string) {
 	newRoute := "/" + id
-	s.e.GET(newRoute, s.base)
+	s.e.GET(newRoute, s.redirect)
 }

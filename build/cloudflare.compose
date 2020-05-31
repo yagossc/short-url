@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  postgres:
+    build:
+      context: ./
+      dockerfile: postgresql.dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cloudflare
+      POSTGRES_PASSWORD: cloudflare
+      POSTGRES_DB: cloudflare
+    restart: always
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
+      - ./initialization/url.sql:/docker-entrypoint-initdb.d/url.sql
+
+  adminer:
+    image: adminer
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8080"
+
+volumes:
+  dbdata:

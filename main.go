@@ -10,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/yagossc/short-url/api"
 	"github.com/yagossc/short-url/query"
 )

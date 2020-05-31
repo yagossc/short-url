@@ -22,9 +22,9 @@ func (s *Server) Start(address string) error {
 	return s.e.Start(address)
 }
 
-// AddRoute does the dynamic route injection and is what
+// addRoute does the dynamic route injection and is what
 // gives the API the expected url shortener behavior.
-func (s *Server) AddRoute(id string) {
+func (s *Server) addRoute(id string) {
 	newRoute := "/" + id
 	s.e.GET(newRoute, s.base)
 }

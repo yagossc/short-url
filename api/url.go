@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/yagossc/short-url/app"
+	"github.com/yagossc/short-url/shortener"
 	"github.com/yagossc/short-url/store"
 )
 
@@ -28,11 +30,30 @@ func (s *Server) base(c echo.Context) error {
 }
 
 func (s *Server) shortener(c echo.Context) error {
-	var url app.LongURL
+	var long app.Long
 
-	if err := c.Bind(&url); err != nil {
+	if err := c.Bind(&long); err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusCreated, url)
+	if long.URL == "" {
+		return c.JSON(http.StatusBadRequest, "Bad Request")
+	}
+
+	short := shortener.GetShortURL(time.Now().UnixNano())
+
+	var mappedURL app.MapURL
+	mappedURL.URLID = 0
+	mappedURL.Short = short
+	mappedURL.Long = long.URL
+
+	shortened, err := store.InsertURL(s.db, &mappedURL)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return err
+	}
+
+	s.addRoute(shortened)
+
+	return c.JSON(http.StatusCreated, shortened)
 }

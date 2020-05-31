@@ -12,7 +12,7 @@ func FindURLByShort(db *query.Executor, short string) (*app.MapURL, error) {
 	sql.Add("SELECT  url_id,")
 	sql.Add("        url_short,")
 	sql.Add("        url_long")
-	sql.Add("   FROM url")
+	sql.Add("   FROM url_map")
 	sql.Where("WHERE url_short = ?", short)
 
 	var url app.MapURL
@@ -23,4 +23,22 @@ func FindURLByShort(db *query.Executor, short string) (*app.MapURL, error) {
 	}
 
 	return &url, nil
+}
+
+// InsertURL saves a new MapURL i the database.
+func InsertURL(db *query.Executor, url *app.MapURL) (string, error) {
+
+	sql := db.NewBuilder()
+
+	sql.Add("INSERT INTO url_map(url_short, url_long)")
+	sql.Add("VALUES ($1, $2)")
+	sql.SetParam(1, url.Short)
+	sql.SetParam(2, url.Long)
+
+	_, err := sql.Exec()
+	if err != nil {
+		return "", err
+	}
+
+	return url.Short, nil
 }

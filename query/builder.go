@@ -1,6 +1,7 @@
 package query
 
 import (
+	"database/sql"
 	"errors"
 	"reflect"
 	"strconv"
@@ -49,6 +50,19 @@ func (b *Builder) Where(sql string, values ...interface{}) {
 	b.appendSQL(&b.whereSQL, s)
 }
 
+// SetParam set the value of a positional parameter.
+func (b *Builder) SetParam(index int, value interface{}) {
+	for {
+		if index <= len(b.params) {
+			break
+		}
+
+		b.params = append(b.params, nil)
+	}
+
+	b.params[index-1] = value
+}
+
 // One executes the query, mapping the first and only row
 // to the specified interface. If the query returns zero or
 // more than one row, an error is returned.
@@ -90,6 +104,20 @@ func (b *Builder) One(value interface{}) error {
 
 	return nil
 }
+
+// Exec executes the non-select statement
+func (b *Builder) Exec() (sql.Result, error) {
+	s := b.buildSQL()
+
+	return b.executor.Exec(s, b.params...)
+}
+
+// // Exec executes the non-select statement
+// func (b *Builder) Query() (*sql.Row, error) {
+//	s := b.buildSQL()
+
+//	return b.executor.QueryRow(s, b.params...)
+// }
 
 func (b *Builder) appendSQL(sb *strings.Builder, s string) {
 	if s == "" {

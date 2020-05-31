@@ -3,7 +3,7 @@ version: '3'
 services:
   postgres:
     build:
-      context: ./
+      context: ./dep/postgresql/
       dockerfile: postgresql.dockerfile
     ports:
       - "5432:5432"
@@ -14,7 +14,10 @@ services:
     restart: always
     volumes:
       - "dbdata:/var/lib/postgresql/data"
-      - ./initialization/url.sql:/docker-entrypoint-initdb.d/url.sql
+      - ./dep/postgresql/init/url.sql:/docker-entrypoint-initdb.d/url.sql
+      - ./dep/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+    networks:
+      - cf_network
 
   adminer:
     image: adminer
@@ -25,3 +28,6 @@ services:
 
 volumes:
   dbdata:
+
+networks:
+    cf_network:

@@ -14,7 +14,8 @@ services:
     restart: always
     volumes:
       - "dbdata:/var/lib/postgresql/data"
-      - ./dep/postgresql/init/url.sql:/docker-entrypoint-initdb.d/url.sql
+      - ./dep/postgresql/init/000001-url.sql:/docker-entrypoint-initdb.d/000001-url.sql
+      - ./dep/postgresql/init/000002-requests.sql:/docker-entrypoint-initdb.d/000002-requests.sql
       - ./dep/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
     networks:
       - cf_network

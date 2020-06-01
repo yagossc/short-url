@@ -13,6 +13,7 @@ import (
 	"github.com/yagossc/short-url/store"
 )
 
+// Only have to seed rand once
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
@@ -29,6 +30,17 @@ func (s *Server) redirect(c echo.Context) error {
 
 	if response == nil {
 		return c.JSON(http.StatusNotFound, "Not Found")
+	}
+
+	currTime := time.Now().Unix()
+	var rh app.ReqHistory
+
+	rh.ShortURL = response.Short
+	rh.ReqTime = currTime
+
+	if err := store.InsertReq(s.db, &rh); err != nil {
+		fmt.Printf("%v\n", err)
+		return err
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, response.Long)

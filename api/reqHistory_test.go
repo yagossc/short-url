@@ -15,7 +15,7 @@ func TestHistory(t *testing.T) {
 	tests := []httpTest{
 		{
 			testName:       "[GET] Full History",
-			url:            "/history/",
+			url:            "/history",
 			body:           `{"url": "http://localhost:8080/yxZ8byjhRui"}`,
 			expectedStatus: http.StatusOK,
 			expectedBody:   expected,

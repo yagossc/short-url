@@ -72,7 +72,7 @@ storage level. For more info see [this section](#database-structure).
 
 ## Code structure
 ### Summary
-Here's a quick summary of the code's packages and their responsibilities:
+Here's a quick summary of the code's relevant packages and their responsibilities:
 - **package api:**            the server/routes actions and routines.
 - **package app:**            the application data structures.
 - **package history:**        utility service for checking dates.
@@ -86,34 +86,40 @@ A visual representation of the code's file structure:
 .
 ├── README.md
 ├── api/                                  # the server/routes actions and routines
-│   ├── reqHistory.go                     # the handlers for each history related endpoint
-│   ├── routes.go                         # this file can be read as a list of routes
-│   ├── server.go                         # server actions i.e.: start listening, add a route
-│   └── url.go                            # the handlers for each url related endpoint
+│   ├── aux_test.go                       # testing auxiliary routines
+│   ├── reqHistory.go                     # the handlers for each history related endpoint
+│   ├── reqHistory_test.go
+│   ├── routes.go                         # this file can be read as a list of routes
+│   ├── server.go                         # server actions i.e.: start listening, add a route
+│   ├── url.go                            # the handlers for each url related endpoint
+│   └── url_test.go
 ├── app/                                  # the application data structures
-│   ├── reqHistory.go                     # the history related data definitions
-│   └── url.go                            # the url related data definitions
+│   ├── reqHistory.go                     # the history related data definitions
+│   └── url.go                            # the url related data definitions
 ├── build/                                # files related to deployment, docker, etc.
-│   ├── cloudflare.compose
-│   └── dep/
-│       └── postgresql/
-│           ├── init/
-│           │   ├── 000001-url.sql
-│           │   └── 000002-requests.sql
-│           ├── postgresql.conf
-│           └── postgresql.dockerfile
+│   ├── cloudflare.compose
+│   └── dep/
+│       └── postgresql/
+│           ├── init/
+│           │   ├── 000001-url.sql
+│           │   └── 000002-requests.sql
+│           ├── postgresql.conf
+│           └── postgresql.dockerfile
 ├── config.go                             # applications's config data definitions
 ├── go.mod
 ├── go.sum
 ├── history/
-│   └── history.go                        # utility service for checking dates
+│   └── history.go                        # utility service for checking dates
+├── internal/
+│   └── dbtest/                           # useful db handler for testing
+│       └── dbtest.go
 ├── main.go
 ├── query/                                # an SQL builder and executor helper service
-│   ├── builder.go
-│   ├── executor.go
-│   └── nocopy.go
+│   ├── builder.go
+│   ├── executor.go
+│   └── nocopy.go
 ├── shortener/                            # service for generating the shortened URL identifier.
-│   └── converter.go                      # exports the GetShortURL function
+│   └── converter.go
 └── store/                                # the database interactions coming from the api
     ├── reqHistory.go                     # the history related database interactions
     └── url.go                            # the url related database interactions
@@ -123,13 +129,12 @@ A visual representation of the code's file structure:
 ## Database structure
 
 ### Summary
-- The URL mapping data definition is quite simple, containing only the Short and Long URLs.
-- Table `url_map` containing columns: `url_id`, `url_short` and `url_long`.
-- Indexing of the column `url_short` to avoid double way base conversions and ensure
-  performance.
-- The History(`req_history`) data definition consists only of a timestamp(`req_time`) and a foreign key
-  (`url_short`) from table `url_map`.
-- Again, indexing of the column `url_short` to improve performance.
+- Table `url_map` contains columns `url_short` and `url_long`.
+- Indexing of the column `url_short` avoids double way base
+  conversions and tries to ensure performance.
+- The requests history, i.e., table `req_history`, holds a
+  timestamp(`req_time`) and a foreign key (`url_short`) from table `url_map`.
+- Again indexing of the column `url_short` to improve/ensure performance.
 
 ### Reasoning
 The importance of performance was put on the retrieval side of
@@ -263,29 +268,50 @@ func GetEntriesInInvertval(entries []app.ReqHistory, interval int) int {
 ```
 
 # Available Routes
-**Description format:** METHOD PATH [Body] [Status, Expected,...]
-
 ### Static routes
 **Shortener:**
 <pre>
 <b>METHOD:</b> POST
 <b>PATH:</b> "/"
-<b>BODY:</b> "[{"url":"http://some.url"}]"
+<b>BODY:</b> JSON {"url":"http://some.url"}
 <b>STATUS:</b> 201
 <b>RESPONSE:</b> JSON {"url":"http://shortened.url/id"}
 </pre>
 
 **History:**
-- **GET** "/history" [{"url":"http://some.url"}] [HttpOK, Full history count]
-- **GET** "/history/week" [{"url":"http://some.url"}] [HttpOK, Last week's history count]
-- **GET** "/history/day" [{"url":"http://some.url"}] [HttpOK, Last day's history count]
+<pre>
+<b>METHOD:</b> GET
+<b>PATH:</b> "/history"
+<b>BODY:</b> JSON {"url":"http://some.url"}
+<b>STATUS:</b> 200
+<b>RESPONSE:</b> JSON {"count": number}
+</pre>
+
+<pre>
+<b>METHOD:</b> GET
+<b>PATH:</b> "/history/week"
+<b>BODY:</b> JSON {"url":"http://some.url"}
+<b>STATUS:</b> 200
+<b>RESPONSE:</b> JSON {"count": number}
+</pre>
+
+<pre>
+<b>METHOD:</b> GET
+<b>PATH:</b> "/history/day"
+<b>BODY:</b> JSON {"url":"http://some.url"}
+<b>STATUS:</b> 200
+<b>RESPONSE:</b> JSON {"count": number}
+</pre>
 
 ### Dynamic routes
 Each time a short URL is generated, a new route is added to the API in
-the form of `APIBase`+`/ShortURL`:
-- **GET** "/ShortURLID" [] [HttpMovedPermanently(), Long URL]
-
-This will trigger a redirect to the long URL mapped to the short one.
+the form of `APIBase`+`/ShortURLID`:
+<pre>
+<b>METHOD:</b> GET
+<b>PATH:</b> "/ShortURLID"
+<b>STATUS:</b> 301
+<b>RESPONSE:</b> Redirect
+</pre>
 
 # How to test
 ## Go test tool
@@ -304,9 +330,10 @@ go test -cover ./...
 go test ./... --coverprofile=coverage.out && \
 go tool cover -html=coverage.out
 ```
+
 ## Testing with cURL
 This assumes the application's running on `localhost:8080`.
-## Static routes
+### Static routes
 **Shortener:**
 ```bash
 curl -X POST -i -H "Content-Type: application/json" \
@@ -326,7 +353,7 @@ curl -X GET -i -H "Content-Type: application/json" \
 - **Week**
 ```bash
 curl -X -i GET -H "Content-Type: application/json" \
-    -H "Accept: application/json"                  \
+p    -H "Accept: application/json"                 \
     http://localhost:8080/history/week             \
     -d '{"URL":"http://localhost/ShortURLIdentifier"}'
 ```
@@ -338,8 +365,8 @@ curl -X GET -i -H "Content-Type: application/json" \
     -d '{"URL":"http://localhost/ShortURLIdentifier"}'
 ```
 
-## Dynamic routes
-The new shortened URL is the response of the `Shortener` endpoint.
+### Dynamic routes
+The new shortened URL is the response from the `Shortener` endpoint.
 ```bash
 curl -X GET -i -L http://localhost:8080/ShortURLIdentifier
 ```

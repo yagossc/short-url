@@ -76,11 +76,11 @@ Here's a quick summary of the code's packages and their responsibilities:
 - **package api:**            the server/routes actions and routines.
 - **package app:**            the application data structures.
 - **package history:**        utility service for checking dates.
-- **package query:**          helper service for building and running the queries.
+- **package query:**          helper service for building and running SQL queries.
 - **package shortener:**      service for generating the shortened URL identifier.
 - **package store**(storage): service handler for database interactions coming from the API.
 
-### Tree
+### Tree -F
 A visual representation of the code's file structure:
 ```bash
 .
@@ -127,7 +127,7 @@ A visual representation of the code's file structure:
 - Table `url_map` containing columns: `url_id`, `url_short` and `url_long`.
 - Indexing of the column `url_short` to avoid double way base conversions and ensure
   performance.
-- The History(`req_history`) data definition consists only of a timestamp and a foreign key
+- The History(`req_history`) data definition consists only of a timestamp(`req_time`) and a foreign key
   (`url_short`) from table `url_map`.
 - Again, indexing of the column `url_short` to improve performance.
 
@@ -260,6 +260,65 @@ func GetEntriesInInvertval(entries []app.ReqHistory, interval int) int {
 
     return ocurrences
 }
+```
+
+# Available Routes
+**Description format:** METHOD PATH [Body] [Status, Expected,...]
+
+### Static
+**Shortener:**
+- **POST** "/" [{"url":"http://some.url"}] [HttpCreated, Short URL]
+
+**History:**
+- **GET** "/history" [{"url":"http://some.url"}] [HttpOK, Full history count]
+- **GET** "/history/week" [{"url":"http://some.url"}] [HttpOK, Last week's history count]
+- **GET** "/history/day" [{"url":"http://some.url"}] [HttpOK, Last day's history count]
+
+### Dynamic
+Each time a short URL is generated, a new route is added to the API in
+the form of `APIBase`+`/ShortURL`:
+- **GET** "/ShortURLID" [] [HttpMovedPermanently(), Long URL]
+
+This will trigger a redirect to the long URL mapped to the short one.
+
+# Testing with cURL
+This assumes the application's running on `localhost:8080`.
+## Static
+**Shortener:**
+```bash
+curl -X POST -i -H "Content-Type: application/json" \
+    -H "Accept: application/json"                   \
+    http://localhost:8080/                          \
+    -d '{"URL":"http://www.google.com"}'
+```
+
+**History:**\
+- **Full**
+```bash
+curl -X GET -i -H "Content-Type: application/json" \
+    -H "Accept: application/json"                  \
+    http://localhost:8080/history                  \
+    -d '{"URL":"http://localhost/ShortURLIdentifier"}'
+```
+- **Week**
+```bash
+curl -X -i GET -H "Content-Type: application/json" \
+    -H "Accept: application/json"                  \
+    http://localhost:8080/history/week             \
+    -d '{"URL":"http://localhost/ShortURLIdentifier"}'
+```
+- **Day**
+```bash
+curl -X GET -i -H "Content-Type: application/json" \
+    -H "Accept: application/json"                  \
+    http://localhost:8080/history/day              \
+    -d '{"URL":"http://localhost/ShortURLIdentifier"}'
+```
+
+## Dynamic
+The new shortened URL is the response of the `Shortener` endpoint.
+```bash
+curl -X GET -i -L http://localhost:8080/ShortURLIdentifier
 ```
 
 # How to build

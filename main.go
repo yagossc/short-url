@@ -37,7 +37,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Create server
-	s := api.NewServer(executor, e, cfg.BaseURL)
+	s := api.NewServer(executor, e, cfg.BaseURL+":"+strconv.FormatUint(cfg.Port, 10))
 
 	// API routes
 	s.Routes()

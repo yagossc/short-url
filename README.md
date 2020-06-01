@@ -265,25 +265,48 @@ func GetEntriesInInvertval(entries []app.ReqHistory, interval int) int {
 # Available Routes
 **Description format:** METHOD PATH [Body] [Status, Expected,...]
 
-### Static
+### Static routes
 **Shortener:**
-- **POST** "/" [{"url":"http://some.url"}] [HttpCreated, Short URL]
+<pre>
+<b>METHOD:</b> POST
+<b>PATH:</b> "/"
+<b>BODY:</b> "[{"url":"http://some.url"}]"
+<b>STATUS:</b> 201
+<b>RESPONSE:</b> JSON {"url":"http://shortened.url/id"}
+</pre>
 
 **History:**
 - **GET** "/history" [{"url":"http://some.url"}] [HttpOK, Full history count]
 - **GET** "/history/week" [{"url":"http://some.url"}] [HttpOK, Last week's history count]
 - **GET** "/history/day" [{"url":"http://some.url"}] [HttpOK, Last day's history count]
 
-### Dynamic
+### Dynamic routes
 Each time a short URL is generated, a new route is added to the API in
 the form of `APIBase`+`/ShortURL`:
 - **GET** "/ShortURLID" [] [HttpMovedPermanently(), Long URL]
 
 This will trigger a redirect to the long URL mapped to the short one.
 
-# Testing with cURL
+# How to test
+## Go test tool
+There are some tests for the API endpoints that can be run with one of
+the commands bellow:
+```
+go test ./...
+
+# for verbosity
+go test -v ./...
+
+# for coverage
+go test -cover ./...
+
+# for detailed coverage
+go test ./... --coverprofile=coverage.out && \
+go tool cover -html=coverage.out
+```
+## Testing with cURL
 This assumes the application's running on `localhost:8080`.
-## Static
+## Static routes
 **Shortener:**
 ```bash
 curl -X POST -i -H "Content-Type: application/json" \
@@ -315,7 +338,7 @@ curl -X GET -i -H "Content-Type: application/json" \
     -d '{"URL":"http://localhost/ShortURLIdentifier"}'
 ```
 
-## Dynamic
+## Dynamic routes
 The new shortened URL is the response of the `Shortener` endpoint.
 ```bash
 curl -X GET -i -L http://localhost:8080/ShortURLIdentifier

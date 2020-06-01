@@ -13,3 +13,9 @@ type ReqHistory struct {
 type Short struct {
 	URL string `json:"url"`
 }
+
+// HistoryResponse defies the JSON
+// response format
+type HistoryResponse struct {
+	Count int `json:"count"`
+}

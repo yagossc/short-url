@@ -85,5 +85,8 @@ func (s *Server) shortener(c echo.Context) error {
 
 	s.AddRoute(shortened)
 
-	return c.JSON(http.StatusCreated, s.url+"/"+shortened)
+	var response app.Shortened
+	response.URL = s.url + "/" + shortened
+
+	return c.JSON(http.StatusCreated, response)
 }

@@ -32,9 +32,15 @@ func (s *Server) entriesLastDay(c echo.Context) error {
 		return err
 	}
 
+	if entries == nil {
+		return c.JSON(http.StatusNotFound, "Not Found")
+	}
+
 	ocurrences := history.GetEntriesInInvertval(entries, 24)
 
-	return c.JSON(http.StatusOK, ocurrences)
+	var response app.HistoryResponse
+	response.Count = ocurrences
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) entriesLastWeek(c echo.Context) error {
@@ -56,9 +62,15 @@ func (s *Server) entriesLastWeek(c echo.Context) error {
 		return err
 	}
 
+	if entries == nil {
+		return c.JSON(http.StatusNotFound, "Not Found")
+	}
+
 	ocurrences := history.GetEntriesInInvertval(entries, 24*7)
 
-	return c.JSON(http.StatusOK, ocurrences)
+	var response app.HistoryResponse
+	response.Count = ocurrences
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) fullHistory(c echo.Context) error {
@@ -80,5 +92,11 @@ func (s *Server) fullHistory(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, len(entries))
+	if entries == nil {
+		return c.JSON(http.StatusNotFound, "Not Found")
+	}
+
+	var response app.HistoryResponse
+	response.Count = len(entries)
+	return c.JSON(http.StatusOK, response)
 }

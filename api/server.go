@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/yagossc/short-url/query"
 )
@@ -21,6 +23,11 @@ func NewServer(db *query.Executor, e *echo.Echo, url string) *Server {
 // Start starts the server instance.
 func (s *Server) Start(address string) error {
 	return s.e.Start(address)
+}
+
+// ServeHTTP implements `http.Handler` interface, which serves HTTP requests.
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.e.ServeHTTP(w, r)
 }
 
 // AddRoute does the dynamic route injection and is what

@@ -13,3 +13,9 @@ type MapURL struct {
 type Long struct {
 	URL string `json:"url"`
 }
+
+// Shortened is the response of a
+// newly generated short URL
+type Shortened struct {
+	URL string `json:"url"`
+}

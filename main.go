@@ -14,7 +14,6 @@ import (
 
 	"github.com/yagossc/short-url/api"
 	"github.com/yagossc/short-url/query"
-	"github.com/yagossc/short-url/store"
 )
 
 func main() {
@@ -41,14 +40,6 @@ func main() {
 
 	// API routes
 	s.Routes()
-
-	results, err := store.FindAllURL(executor)
-	if err != nil { // FIXME: properly handle this error
-		fmt.Printf("error: %v\n", err)
-	}
-	for _, val := range results {
-		s.AddRoute(val.Short)
-	}
 
 	log.Fatal(s.Start(":" + strconv.FormatUint(cfg.Port, 10)))
 }

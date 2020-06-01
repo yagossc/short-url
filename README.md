@@ -15,10 +15,13 @@ The comprehensive solution's explanation is splitted in four sections:
 - Insert the new URL friendly base converted string.
 
 ### Reasoning
-As a first instinct when reading the problems's text, one might
-immediately go for "hashes". So, are hashes a good choice?
+Analyzing the problems's text brings up the following questions, that,
+when answered, show path to the solution's motivations.
 
-**No**, they're not a good fit for this specific scenario, because:
+___
+**Question: Are hashes a good choice here?**\
+**Answer:** No, they're not a good fit for this specific scenario for
+the followig reasons:
 - **Length:** Common hashing algorithms produce long strings, which
 goes against the point of a URL shortener.
 - **Non-Printable Characters:** Final hash results might not be a valid URL.
@@ -30,10 +33,15 @@ and even though hyphen(-) and underscore(_) are allowed in a URL,
 they'll be avoided in order to not build "bad" looking URLs like
 `http://domain.co/c-____`.
 
-**What now?** Taking into consideration that [a-z A-Z 0-9] is a 62 value
-range, we'll simplify the problem to a base conversion.
+___
+**Question: What will be the short URL identifiers and how to get them?**\
+**Answer:** Taking into consideration what was said above about URLs
+and that [a-z A-Z 0-9] is a 62 value range, we'll simplify the problem
+to a base conversion.
 
-**Is this range enough?** Some quick math:
+___
+**Question: Can this base represent enough values?**\
+**Answer:** Some quick math.
 
 With 62 chars and a unique string of, let's say, 7 characters long we
 can represent:
@@ -47,14 +55,19 @@ That's ~218 trillion URLs. How about 10 characters long?
 
 Well, that's a really large number.
 
-
-**What about the non-sequential constraint and predictability of a valid
-URL?** A random generated value will be passed to the base conversion function
+___
+**Question: What about the non-sequential constraint and
+predictability of a valid URL?**\
+**Answer:** A random generated value will be passed to the base conversion function
 and avoid these problems.
 
-**How about uniqueness?** Collisions will be checked during insertion.
+___
+**Question: How about uniqueness?**\
+**Answer:** Collisions will be checked during insertion.
 
-**Performance?** To ensure performance, measures were taken in the data
+___
+**Question: Performance?**\
+**Answer:** To ensure performance, measures were taken in the data
 storage level. For more info see [this section](#database-structure).
 
 ## Code structure
@@ -62,57 +75,65 @@ storage level. For more info see [this section](#database-structure).
 Here's a quick summary of the code's packages and their responsibilities:
 - **package api:**            the server/routes actions and routines.
 - **package app:**            the application data structures.
-- **package query:**          helper package for building and running the queries.
-- **package shortener:**      where the shortened path of the URL comes
-  from.
-- **package store**(storage): the database interactions coming from the api.
+- **package history:**        utility service for checking dates.
+- **package query:**          helper service for building and running the queries.
+- **package shortener:**      service for generating the shortened URL identifier.
+- **package store**(storage): service handler for database interactions coming from the API.
 
 ### Tree
 A visual representation of the code's file structure:
 ```bash
 .
 ├── README.md
-├── api/                               # the server/routes actions and routines
-│   ├── routes.go                      # this file can be read as a list of routes
-│   ├── server.go                      # server actions i.e.: start listening, add a route
-│   └── url.go                         # the request handlers for each url related endpoint
-├── app/                               # the application data structures
-│   └── url.go                         # the url related data definitions
-├── build/                             # files related to deployment, docker, etc.
+├── api/                                  # the server/routes actions and routines
+│   ├── reqHistory.go                     # the handlers for each history related endpoint
+│   ├── routes.go                         # this file can be read as a list of routes
+│   ├── server.go                         # server actions i.e.: start listening, add a route
+│   └── url.go                            # the handlers for each url related endpoint
+├── app/                                  # the application data structures
+│   ├── reqHistory.go                     # the history related data definitions
+│   └── url.go                            # the url related data definitions
+├── build/                                # files related to deployment, docker, etc.
 │   ├── cloudflare.compose
 │   └── dep/
 │       └── postgresql/
 │           ├── init/
-│           │   └── url.sql
+│           │   ├── 000001-url.sql
+│           │   └── 000002-requests.sql
 │           ├── postgresql.conf
 │           └── postgresql.dockerfile
-├── config.go                          # applications's config data definitions
+├── config.go                             # applications's config data definitions
 ├── go.mod
 ├── go.sum
+├── history/
+│   └── history.go                        # utility service for checking dates
 ├── main.go
-├── query/                             # an SQL builder and executor helper package
+├── query/                                # an SQL builder and executor helper service
 │   ├── builder.go
 │   ├── executor.go
 │   └── nocopy.go
-├── shortener/                         # where the shortened path of the URL comes from
-│   └── converter.go                   # exports the GetShortURL function
-└── store/                             # the database interactions coming from the api
-    └── url.go                         # the url related database interactions
+├── shortener/                            # service for generating the shortened URL identifier.
+│   └── converter.go                      # exports the GetShortURL function
+└── store/                                # the database interactions coming from the api
+    ├── reqHistory.go                     # the history related database interactions
+    └── url.go                            # the url related database interactions
 
 ```
 
 ## Database structure
 
 ### Summary
-- The data definition is quite simple, containing only the Short and Long URLs.
-- Simple model/table named `url_map` containing columns: `url_id`, `url_short`
-  and `url_long`.
+- The URL mapping data definition is quite simple, containing only the Short and Long URLs.
+- Table `url_map` containing columns: `url_id`, `url_short` and `url_long`.
 - Indexing of the column `url_short` to avoid double way base conversions and ensure
   performance.
+- The History(`req_history`) data definition consists only of a timestamp and a foreign key
+  (`url_short`) from table `url_map`.
+- Again, indexing of the column `url_short` to improve performance.
 
 ### Reasoning
 The importance of performance was put on the retrieval side of
-operations: the redirect behind short URL. This means the lookup is
+operations: the redirect behind the short URL. This means lookup is
 the critical piece.
 Therefore, the DBM's (PostgreSQL) indexing should do the trick and,
 although some other tweaks like the use of caches or some sort of
@@ -120,8 +141,9 @@ rotation between RAM and Disk usage could be beneficial, this will be
 the only adopted strategy, for simplicity's sake.
 
 ### Data definition details
+#### URL Mapping
 ```sql
-# /short-url/build/dep/postgresql/init/url.sql
+# /short-url/build/dep/postgresql/init/000001-url.sql
 
 CREATE TABLE url_map (
   url_id SERIAL NOT NULL,
@@ -134,6 +156,22 @@ CREATE TABLE url_map (
 
 # Relevant line
 CREATE INDEX ix_url_short ON url_map (url_short);
+```
+
+#### Requests History
+```sql
+# /short-url/build/dep/postgresql/init/000002-requests.sql
+
+CREATE TABLE req_history (
+  req_id SERIAL NOT NULL,
+  url_short TEXT NOT NULL,
+  req_time BIGINT NOT NULL,
+
+  CONSTRAINT pk_req PRIMARY KEY (req_id),
+  CONSTRAINT fk_url FOREIGN KEY (url_short) REFERENCES url_map (url_short)
+);
+
+CREATE INDEX ix_req_url ON req_history (url_short)
 ```
 
 ## In depth implementation
@@ -198,6 +236,30 @@ func (s *Server) AddRoute(id string) {
     }
 
     ...
+```
+
+### Request ocurrences counter
+```golang
+// GetEntriesInInvertval counts the ocurrences of a req given a time
+// interval in hours. For example, to get the entries for the past day:
+// ocurrences := GetEntriesInInvertval(entries, 24)
+// To Get the entries for the past week:
+// ocurrences := GetEntriesInInvertval(entries, 24*7)
+func GetEntriesInInvertval(entries []app.ReqHistory, interval int) int {
+    ocurrences := 0
+    currTime := time.Now()
+
+    for _, entry := range entries {
+        t := time.Unix(entry.ReqTime, 0)
+        diff := int64(currTime.Sub(t).Hours()) / int64(interval)
+
+        if diff < 1 {
+            ocurrences++
+        }
+    }
+
+    return ocurrences
+}
 ```
 
 # How to build

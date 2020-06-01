@@ -11,6 +11,7 @@ import (
 	"github.com/yagossc/short-url/store"
 )
 
+// FIXME: these functions are a little repetitive, remember to 'DRY'.
 func (s *Server) entriesLastDay(c echo.Context) error {
 	var short app.Short
 
